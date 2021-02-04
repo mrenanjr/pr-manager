@@ -74,6 +74,7 @@ export const Form = styled.form`
     border-radius: 0 5px 5px 0;
     border: 0;
     color: #fff;
+    cursor: pointer;
     font-weight: bold;
     transition: background-color 0.2s;
 

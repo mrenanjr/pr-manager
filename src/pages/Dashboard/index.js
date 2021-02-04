@@ -1,61 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery } from '@apollo/client';
+import { useState, useEffect } from 'react';
+import { useQuery, useLazyQuery } from '@apollo/client';
 import { Header, PRImg, Title, Form, Error, Repositories } from './style';
 import { FiChevronRight, FiLogOut } from 'react-icons/fi';
-import { GET_PULLREQUESTS } from '../../graphql/get-pullrequests';
+import { GET_PULLREQUESTS } from '../../graphql/pullrequests-queries';
 
-import gql from 'graphql-tag';
 import pullRequestSvg from '../../assets/pr.svg';
 
-const Dashboard = () => {
-  const [showInputToken, setShowInputToken] = useState(true);
+function Dashboard() {
+  const [hasToken, setHasToken] = useState(false);
+  // const [isLogIn, setIsLogIn] = useState(false);
   const [newToken, setNewToken] = useState('');
   const [inputError, setInputError] = useState('');
   const [newRepo, setNewRepo] = useState('');
-  const [repositories, setRepositories] = useState([]);
+  const [repositories, setRepositories] = useState(null);
+  const [getRepositories, { loading, error, data }] = useLazyQuery(GET_PULLREQUESTS, {
+    variables: { name: '' }
+  });
 
   useEffect(() => {
     if(localStorage.getItem(process.env.REACT_APP_LOCALSTORAGE_PROPERTY_NAME)) {
-      setShowInputToken(false);
+      setHasToken(true);
     }
-  }, []);
+
+    if(error) {
+      const message = "A requisição há API retornou um erro.";
+
+      if(error.message.includes('status code 401')) {
+        clearLocalStorage();
+        setInputError(`${message} Não foi possível autorizar com o token repassado.`)
+      } else {
+        setInputError(`${message} Error: ${error.message}`)
+      }
+    }
+
+    if(data) {
+      setInputError('');
+      // if(data.viewer.login) {
+      //   setIsLogIn(true);
+      // }
+      
+      if(data.viewer.repository) {
+        setRepositories([...repositories, data.viewer.repository]);
+      }
+    }
+  }, [data, error]);
 
   const handleResetToken = (event) => {
     event.preventDefault();
 
-    localStorage.removeItem(process.env.REACT_APP_LOCALSTORAGE_PROPERTY_NAME);
-
-    setShowInputToken(true);
+    client.resetStore();
+    clearLocalStorage();
     clearInputs();
   }
 
-  const handleUseToken = (event) => {
+  const handleUseToken = async (event) => {
     event.preventDefault();
 
     if(!newToken) {
       setInputError('Coloque o token para autenticar na API do GitHub');
+      clearInputs();
       return;
     }
 
-    try {
-      const PROFILE_QUERY = gql`
-        query {
-          viewer {
-            login
-          }
-        }
-      `;
-      const { data } = useQuery(PROFILE_QUERY);
+    getRepositories();
 
-      console.log(data);
-
-      localStorage.setItem(process.env.REACT_APP_LOCALSTORAGE_PROPERTY_NAME, newToken);
-
-      clearInputs();
-      setShowInputToken(false);
-    } catch (err) {
-      setInputError(`Falha na autenticação. Error: ${err}`);
-    }
+    addStorage();
+    clearInputs();
   }
 
   const handleAddRepository = (event) => {
@@ -63,20 +73,52 @@ const Dashboard = () => {
 
     if(!newRepo) {
       setInputError('Digite o autor/nome do repositório');
+      clearInputs();
       return;
     }
 
-    try {
-      clearInputs();
-    } catch(err) {
-      setInputError('Erro na busca por esse repositório');
-    }
+    getRepositories({variables: { name: newRepo }});
+
+    clearInputs();
+  }
+
+  const addStorage = () => {
+    localStorage.setItem(process.env.REACT_APP_LOCALSTORAGE_PROPERTY_NAME, newToken);
+    setHasToken(true);
+  }
+
+  const clearLocalStorage = () => {
+    localStorage.removeItem(process.env.REACT_APP_LOCALSTORAGE_PROPERTY_NAME);
+    setHasToken(false);
   }
 
   const clearInputs = () => {
     setNewToken('');
-    setInputError('');
+    setNewRepo('');
   }
+
+  if (loading) return <p>Loading ...</p>;
+
+  // if (error) {
+  //   const message = "A requisição há API retornou um erro.";
+
+  //   if(error.message.includes('status code 401')) {
+  //     clearStorage();
+  //     setInputError(`${message} Não foi possível autorizar com o token repassado.`)
+  //   } else {
+  //     setInputError(`${message} Error: ${error.message}`)
+  //   }
+  // }
+
+  // if(data) {
+  //   if(data.viewer.login) {
+  //     setIsLogIn(true);
+  //   }
+    
+  //   if(data.viewer.repository) {
+  //     setRepositories()
+  //   }
+  // }
 
   return (
     <>
@@ -86,7 +128,7 @@ const Dashboard = () => {
           <strong>Pull Request Manager</strong>
         </PRImg>
 
-        {!showInputToken &&
+        {hasToken &&
           <a onClick={handleResetToken}>
             <FiLogOut size={20}/>
             Reset Token
@@ -96,39 +138,32 @@ const Dashboard = () => {
 
       <Title>Multi Repo PR Manager</Title>
 
-      {showInputToken ?
-        <Form hasError={!!inputError} onSubmit={handleUseToken}>
-          <input
-            value={newToken}
-            onChange={e => setNewToken(e.target.value)}
-            placeholder="Informe seu token de acesso"
-          />
-          <button type="submit">Usar</button>
-        </Form>
-        :
-        <Form hasError={!!inputError} onSubmit={handleAddRepository}>
-          <input
-            value={newRepo}
-            onChange={e => setNewRepo(e.target.value)}
-            placeholder="Informe o seu repositório"
-          />
-          <button type="submit">Pesquisar</button>
-        </Form>
-      }
+      <Form hasError={!!inputError} onSubmit={!hasToken ? handleUseToken : handleAddRepository}>
+        <input
+          value={!hasToken ? newToken : newRepo}
+          onChange={e => (!hasToken ? setNewToken(e.target.value) : setNewRepo(e.target.value))}
+          placeholder={!hasToken ? 'Informe seu token de acesso' : 'Informe o seu repositório'}
+        />
+        <button type="submit">{!hasToken ? 'Usar' : 'Pesquisar'}</button>
+      </Form>
 
       {inputError && <Error>{inputError}</Error>}
 
       <Repositories>
-        <a href="teste">
-          <img></img>
+        {repositories && 
+          repositories.map(repository => (
+            <a key={repository.id} href="teste">
+              <img src={repository.owner.avatarUrl} alt={repository.owner.login} />
 
-          <div>
-            <strong>Repositório</strong>
-            <p>Descrição do repositório</p>
-          </div>
+              <div>
+                  <strong>{repository.name}</strong>
+                  <p>{!!repository.description ? repository.description : "Sem descrição"}</p>
+              </div>
 
-          <FiChevronRight size={20} />
-        </a>
+              <FiChevronRight size={20} />
+            </a>
+          )
+        )}
       </Repositories>
     </>
   );
