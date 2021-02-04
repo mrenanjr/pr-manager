@@ -1,7 +1,25 @@
 import styled, { css } from 'styled-components';
 import { shade } from 'polished';
 
-export const PRImg = styled.a`
+export const Header = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 700px;
+
+  a {
+    display: flex;
+    align-items: center;
+    color: #a8a8b3;
+    cursor: pointer;
+
+    svg {
+      margin-right: 4px;
+    }
+  }
+`;
+
+export const PRImg = styled.div`
   display: flex;
   align-items: center;
 

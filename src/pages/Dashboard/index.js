@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { PRImg, Title, Form, Error, Repositories } from './style';
-import { FiChevronRight } from 'react-icons/fi';
+import { useQuery } from '@apollo/client';
+import { Header, PRImg, Title, Form, Error, Repositories } from './style';
+import { FiChevronRight, FiLogOut } from 'react-icons/fi';
+import { GET_PULLREQUESTS } from '../../graphql/get-pullrequests';
 
+import gql from 'graphql-tag';
 import pullRequestSvg from '../../assets/pr.svg';
 
 const Dashboard = () => {
@@ -12,28 +15,50 @@ const Dashboard = () => {
   const [repositories, setRepositories] = useState([]);
 
   useEffect(() => {
-    if(localStorage.getItem('tokenGitHubGraphQL'))
-      showInputToken(false);
+    if(localStorage.getItem(process.env.REACT_APP_LOCALSTORAGE_PROPERTY_NAME)) {
+      setShowInputToken(false);
+    }
   }, []);
 
-  async function handleUseToken(event) {
+  const handleResetToken = (event) => {
+    event.preventDefault();
+
+    localStorage.removeItem(process.env.REACT_APP_LOCALSTORAGE_PROPERTY_NAME);
+
+    setShowInputToken(true);
+    clearInputs();
+  }
+
+  const handleUseToken = (event) => {
     event.preventDefault();
 
     if(!newToken) {
-      setInputError('Defina o token');
+      setInputError('Coloque o token para autenticar na API do GitHub');
       return;
     }
 
-    console.log(newToken);
+    try {
+      const PROFILE_QUERY = gql`
+        query {
+          viewer {
+            login
+          }
+        }
+      `;
+      const { data } = useQuery(PROFILE_QUERY);
 
-    localStorage.setItem('tokenGitHubGraphQL', newToken);
+      console.log(data);
 
-    setNewToken('');
-    setShowInputToken(false);
-    setInputError('');
+      localStorage.setItem(process.env.REACT_APP_LOCALSTORAGE_PROPERTY_NAME, newToken);
+
+      clearInputs();
+      setShowInputToken(false);
+    } catch (err) {
+      setInputError(`Falha na autenticação. Error: ${err}`);
+    }
   }
 
-  function handleAddRepository(event) {
+  const handleAddRepository = (event) => {
     event.preventDefault();
 
     if(!newRepo) {
@@ -41,22 +66,33 @@ const Dashboard = () => {
       return;
     }
 
-    console.log(newRepo);
-
     try {
-      setNewRepo('');
-      setInputError('');
+      clearInputs();
     } catch(err) {
       setInputError('Erro na busca por esse repositório');
     }
   }
 
+  const clearInputs = () => {
+    setNewToken('');
+    setInputError('');
+  }
+
   return (
     <>
-      <PRImg>
-        <img src={pullRequestSvg}  alt="Pull request SVG"></img>
-        <strong>Pull Request Manager</strong>
-      </PRImg>
+      <Header>
+        <PRImg>
+          <img src={pullRequestSvg}  alt="Pull request SVG"></img>
+          <strong>Pull Request Manager</strong>
+        </PRImg>
+
+        {!showInputToken &&
+          <a onClick={handleResetToken}>
+            <FiLogOut size={20}/>
+            Reset Token
+          </a>
+        }
+      </Header>
 
       <Title>Multi Repo PR Manager</Title>
 
