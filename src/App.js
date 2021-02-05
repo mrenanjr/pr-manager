@@ -5,6 +5,11 @@ import GlobalStyle from './styles/global';
 import Routes from "./routes";
 
 import apolloClient from './services/apollo';
+import client from "./services/apollo";
+
+export const logout = () => {
+  client.cache.reset();
+}
 
 const App = () => {
   return (

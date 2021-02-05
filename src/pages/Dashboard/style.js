@@ -12,6 +12,11 @@ export const Header = styled.div`
     align-items: center;
     color: #a8a8b3;
     cursor: pointer;
+    transition: color 0.2s;
+
+    &:hover {
+      color: #666;
+    }
 
     svg {
       margin-right: 4px;
@@ -30,6 +35,29 @@ export const PRImg = styled.div`
 
   strong {
     font-weight: bold;
+  }
+`;
+
+export const SubHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 700px;
+
+  a {
+    display: flex;
+    align-items: center;
+    color: #c53030;
+    cursor: pointer;
+    transition: color 0.2s;
+
+    &:hover {
+      color: #902323;
+    }
+
+    svg {
+      margin-right: 4px;
+    }
   }
 `;
 
@@ -74,11 +102,12 @@ export const Form = styled.form`
     border-radius: 0 5px 5px 0;
     border: 0;
     color: #fff;
-    cursor: pointer;
-    font-weight: bold;
+
     transition: background-color 0.2s;
 
-    &:hover {
+    &:hover {    cursor: pointer;
+
+    cursor: pointer;
       background: ${shade(0.2, '#04D361')};
     }
   }
