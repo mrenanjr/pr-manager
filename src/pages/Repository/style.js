@@ -118,6 +118,21 @@ export const RepositoryInfo = styled.section`
 
 export const PullRequests = styled.div`
   margin-top: 80px;
+  transition: color 0.2s;
+
+  .next:hover {
+    color: #666;
+
+    svg {
+      color: #666;
+    }
+  }
+
+  .next {
+    background: transparent;
+    color: #a8a8b3;
+    cursor: pointer;
+  }
 
   a {
     background: #fff;

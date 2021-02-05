@@ -21,21 +21,18 @@ export const GET_REPOSITORY = gql`
 `;
 
 export const GET_PULLREQUESTS = gql`
-  query GetPullRequests($name: String!, $first: Int!) {
+  query GetPullRequests($name: String!, $first: Int!, $after: String) {
     viewer {
       repository(name: $name) {
         description
         forkCount
-        owner {
-          avatarUrl
-        }
       	collaborators {
           totalCount
         }
       	issues {
           totalCount
         }
-      	pullRequests(first: $first) {
+      	pullRequests(first: $first, after: $after) {
         	totalCount
         	nodes {
             id

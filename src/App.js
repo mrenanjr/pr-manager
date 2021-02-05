@@ -7,7 +7,7 @@ import Routes from "./routes";
 import apolloClient from './services/apollo';
 import client from "./services/apollo";
 
-export const logout = () => {
+export const apolloClearCache = () => {
   client.cache.reset();
 }
 

@@ -4,7 +4,7 @@ import { useLazyQuery } from '@apollo/client';
 import { FiChevronRight, FiLogOut, FiTrash2 } from 'react-icons/fi';
 import { GET_REPOSITORY } from '../../graphql/pullrequests-queries';
 
-import { logout } from '../../App';
+import { apolloClearCache } from '../../App';
 
 import { Header, PRImg, SubHeader, Title, Form, Error, Repositories } from './style';
 
@@ -16,6 +16,10 @@ const Dashboard = () => {
   const [newRepo, setNewRepo] = useState('');
   const [hasToken, setHasToken] = useState(() => {
     const token = localStorage.getItem(process.env.REACT_APP_LOCALSTORAGE_PROPERTY_NAME);
+
+    if(!token) {
+      localStorage.removeItem('@PR-MANAGER:repositories');
+    }
 
     return !!token;
   });
@@ -39,13 +43,17 @@ const Dashboard = () => {
       if(error.message.includes('status code 401')) {
         setMessageError(`${message} Não foi possível autorizar com o token informado.`)
         clearLocalStorage();
-        clearInputs();
       } else {
         setMessageError(`${message} Error: ${error.message}`)
       }
-    }
 
+      clearInputs();
+    }
+  }, [error]);
+
+  useEffect(() => {
     if(data) {
+      setHasToken(true);
       setMessageError('');
 
       if(data.viewer.repository) {
@@ -58,21 +66,24 @@ const Dashboard = () => {
 
       clearInputs();
     }
-  }, [data, error]);
+  }, [data]);
 
   useEffect(() => {
-    localStorage.setItem(
-      '@PR-MANAGER:repositories',
-      JSON.stringify(repositories)
-    );
+    if(repositories.length > 0) {
+      localStorage.setItem(
+        '@PR-MANAGER:repositories',
+        JSON.stringify(repositories)
+      );
+    }
   }, [repositories]);
 
   const handleResetToken = (event) => {
     event.preventDefault();
 
-    logout();
+    apolloClearCache();
     clearLocalStorage();
     clearInputs();
+    setMessageError('');
   }
 
   const handleUseToken = async (event) => {
@@ -84,17 +95,16 @@ const Dashboard = () => {
       return;
     }
 
-    getRepositories();
+    localStorage.setItem(process.env.REACT_APP_LOCALSTORAGE_PROPERTY_NAME, newToken);
 
-    addTokenStorage();
-    clearInputs();
+    getRepositories();
   }
 
   const handleAddRepository = (event) => {
     event.preventDefault();
 
     if(!newRepo) {
-      setMessageError('Digite o autor/nome do repositório');
+      setMessageError('Digite o nome do repositório');
       clearInputs();
       return;
     }
@@ -105,19 +115,19 @@ const Dashboard = () => {
   const handleResetRepo = (event) => {
     event.preventDefault();
 
-    setRepositories([]);
-    localStorage.removeItem('@PR-MANAGER:repositories');
-  }
-
-  const addTokenStorage = () => {
-    localStorage.setItem(process.env.REACT_APP_LOCALSTORAGE_PROPERTY_NAME, newToken);
-    setHasToken(true);
+    clearRepo();
+    apolloClearCache();
   }
 
   const clearLocalStorage = () => {
+    clearRepo();
     localStorage.removeItem(process.env.REACT_APP_LOCALSTORAGE_PROPERTY_NAME);
-    localStorage.removeItem('@PR-MANAGER:repositories');
     setHasToken(false);
+  }
+
+  const clearRepo = () => {
+    localStorage.removeItem('@PR-MANAGER:repositories');
+    setRepositories([]);
   }
 
   const clearInputs = () => {
@@ -166,7 +176,12 @@ const Dashboard = () => {
       <Repositories>
         {repositories &&
           repositories.map(repository => (
-            <Link key={repository.id} to={`/repositories/${repository.name}`}>
+            <Link key={repository.id} to={{
+              pathname: `/repositories/${repository.name}`,
+              state: {
+                avatarUrl: repository.owner.avatarUrl
+              }
+            }}>
               <img src={repository.owner.avatarUrl} alt={repository.owner.login} />
 
               <div>

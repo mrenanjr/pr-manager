@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouteMatch, Link } from 'react-router-dom';
 import { FiChevronLeft, FiChevronRight, FiClipboard } from 'react-icons/fi';
 import { useQuery } from '@apollo/client';
@@ -7,9 +7,8 @@ import { GET_PULLREQUESTS } from '../../graphql/pullrequests-queries';
 import { Header, PRImg, RepositoryInfo, PullRequests } from './style';
 
 import pullRequestSvg from '../../assets/pr.svg';
-import { useState } from 'react';
 
-const Repository = () => {
+const Repository = (props) => {
   const { params } = useRouteMatch('');
 
   const [colaborators, setColaborators] = useState(0);
@@ -17,14 +16,14 @@ const Repository = () => {
   const [issues, setIssues] = useState(0);
   const [pullRequestsCount, setPullRequestsCount] = useState(0);
   const [description, setDescription] = useState('');
-  const [avatar, setAvatar] = useState('');
 
   const [pullRequests, setPullRequests] = useState([]);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [endCursor, setEndCursor] = useState('');
 
-  const { error, data, refetch } = useQuery(GET_PULLREQUESTS, {
-    variables: { name: params.repository, first: 10 }
+  const { data, refetch } = useQuery(GET_PULLREQUESTS, {
+    variables: { name: params.repository, first: 5, after: null },
+    fetchPolicy: "no-cache"
   });
 
   useEffect(() => {
@@ -33,14 +32,13 @@ const Repository = () => {
       setColaborators(repository.collaborators.totalCount);
       setIssues(repository.issues.totalCount);
       setDescription(repository.description);
-      setAvatar(repository.owner.avatarUrl);
       setForks(repository.forkCount);
 
       if(repository.pullRequests) {
         setPullRequestsCount(repository.pullRequests.totalCount);
         setHasNextPage(repository.pullRequests.pageInfo.hasNextPage);
         setEndCursor(repository.pullRequests.pageInfo.endCursor);
-        setPullRequests(repository.pullRequests.nodes);
+        setPullRequests([...pullRequests, ...repository.pullRequests.nodes]);
       }
     }
   }, [data]);
@@ -53,6 +51,16 @@ const Repository = () => {
     textField.select();
     document.execCommand('copy');
     textField.remove();
+  }
+
+  const handleNextPage = (event) => {
+    event.preventDefault();
+
+    refetch({
+      name: params.repository,
+      first: 5,
+      after: endCursor
+    })
   }
 
   return (
@@ -71,7 +79,7 @@ const Repository = () => {
 
       <RepositoryInfo>
         <header>
-          <img src={avatar} alt="Avatar image"></img>
+          <img src={props.location.state.avatarUrl} alt="Avatar image"></img>
           <div className="infoContainer">
             <div className="info">
               <strong>{params.repository}</strong>
@@ -102,7 +110,7 @@ const Repository = () => {
           </li>
           <li>
             <strong>{pullRequestsCount}</strong>
-            <span>Pull Request</span>
+            <span>{pullRequestsCount > 1 ? "Pull Requests" : "Pull Request"} </span>
           </li>
         </ul>
       </RepositoryInfo>
@@ -123,6 +131,12 @@ const Repository = () => {
               <FiChevronRight size={20} />
             </a>
           ))
+        }
+        {hasNextPage &&
+          <a className="next" onClick={handleNextPage}>
+            <FiChevronRight size={20}/>
+            Next
+          </a>
         }
       </PullRequests>
     </>

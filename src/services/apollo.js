@@ -7,9 +7,7 @@ const httpLink = createHttpLink({
 
 const authLink = setContext((_, { headers }) => {
   const token = localStorage.getItem(process.env.REACT_APP_LOCALSTORAGE_PROPERTY_NAME);
-  
-  console.log(`Middleware: ${token}`);
-  
+
   return {
     headers: {
       ...headers,
