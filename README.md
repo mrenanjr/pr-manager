@@ -6,7 +6,7 @@ Uma aplicação para gerenciamento de pull requests ao trabalhar com múltiplos 
 
 No diretório do projeto, você pode rodar:
 
-### Comando `yarn install` para instalar todas as depedências do projeto.
+### `yarn install` para instalar todas as depedências do projeto.
 
 ### `yarn start`
 
