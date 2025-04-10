@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useRouteMatch, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { FiChevronLeft, FiChevronRight, FiClipboard } from 'react-icons/fi';
 import { useQuery } from '@apollo/client';
 import { GET_PULLREQUESTS } from '../../graphql/pullrequests-queries';
@@ -8,8 +8,9 @@ import { Header, PRImg, RepositoryInfo, PullRequests } from './style';
 
 import pullRequestSvg from '../../assets/pr.svg';
 
-const Repository = (props) => {
-  const { params } = useRouteMatch('');
+const Repository = () => {
+  const params = useParams('');
+  const location = useLocation();
 
   const [colaborators, setColaborators] = useState(0);
   const [forks, setForks] = useState(0);
@@ -79,7 +80,7 @@ const Repository = (props) => {
 
       <RepositoryInfo>
         <header>
-          <img src={props.location.state.avatarUrl} alt="Avatar image"></img>
+          <img src={location.state.avatarUrl} alt="Avatar image"></img>
           <div className="infoContainer">
             <div className="info">
               <strong>{params.repository}</strong>

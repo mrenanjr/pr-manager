@@ -1,16 +1,16 @@
-import { Switch, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 
 import Dashboard from '../pages/Dashboard';
 import Repository from '../pages/Repository';
 
-const Routes = () => {
+const CustomRoutes = () => {
   return (
-    <Switch>
-      <Route path="/" exact component={Dashboard} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/repositories/:repository+" component={Repository} />
-    </Switch>
+    <Routes>
+      <Route path="/" exact element={<Dashboard />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/repositories/:repository*" element={<Repository />} />
+    </Routes>
   );
 }
 
-export default Routes;
+export default CustomRoutes;

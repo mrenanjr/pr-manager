@@ -162,7 +162,7 @@ const Dashboard = () => {
         }
       </SubHeader>
 
-      <Form hasError={!!messageError} onSubmit={!hasToken ? handleUseToken : handleAddRepository}>
+      <Form $hasError={!!messageError} onSubmit={!hasToken ? handleUseToken : handleAddRepository}>
         <input
           value={!hasToken ? newToken : newRepo}
           onChange={e => (!hasToken ? setNewToken(e.target.value) : setNewRepo(e.target.value))}
@@ -176,12 +176,11 @@ const Dashboard = () => {
       <Repositories>
         {repositories &&
           repositories.map(repository => (
-            <Link key={repository.id} to={{
-              pathname: `/repositories/${repository.name}`,
-              state: {
-                avatarUrl: repository.owner.avatarUrl
-              }
-            }}>
+            <Link
+              key={repository.id}
+              to={`/repositories/${repository.name}`}
+              state={{ avatarUrl: repository.owner.avatarUrl }}
+            >
               <img src={repository.owner.avatarUrl} alt={repository.owner.login} />
 
               <div>
